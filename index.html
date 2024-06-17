@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Simples</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .chat-container {
+        width: 320px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .chat-header {
+        background-color: #007bff;
+        color: #fff;
+        padding: 12px;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    #message-container {
+        height: 240px; /* Reduzimos um pouco para acomodar o indicador de digitação */
+        overflow-y: scroll;
+        padding: 10px;
+        position: relative; /* Posição relativa para posicionar o indicador de digitação */
+    }
+
+    .message {
+        background-color: #f9f9f9;
+        padding: 8px;
+        margin-bottom: 6px;
+        border-radius: 4px;
+    }
+
+    .message.sender {
+        background-color: #007bff;
+        color: #fff;
+        align-self: flex-end;
+    }
+
+    .message.received {
+        background-color: #e0f7fa;
+    }
+
+    .delivery-status {
+        font-size: 12px;
+        color: #888;
+        margin-left: 16px;
+    }
+
+    .typing-indicator {
+        position: absolute;
+        bottom: 0;
+        left: 10px;
+        font-style: italic;
+        color: #888;
+    }
+
+    #message-input {
+        width: calc(100% - 70px);
+        padding: 10px;
+        border: none;
+        border-top: 1px solid #ccc;
+        font-size: 14px;
+    }
+
+    button {
+        width: 70px;
+        height: 100%;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+</style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="chat-header">Chat Simples</div>
+    <div id="message-container">
+        <div id="typing-indicator" class="typing-indicator"></div>
+    </div>
+    <input type="text" id="message-input" placeholder="Digite sua mensagem..." oninput="typingEvent()">
+    <button onclick="sendMessage()">Enviar</button>
+</div>
+
+<script>
+    const username = prompt("Digite seu nome de usuário:");
+    let typingTimeout = null;
+    let otherTyping = false;
+    let messages = JSON.parse(localStorage.getItem('messages')) || [];
+
+    setInterval(() => {
+        if (otherTyping) {
+            const typingIndicator = document.getElementById('typing-indicator');
+            typingIndicator.textContent = 'A outra pessoa está digitando...';
+        } else {
+            const typingIndicator = document.getElementById('typing-indicator');
+            typingIndicator.textContent = '';
+        }
+    }, 1000);
+
+    function updateLocalStorage() {
+        localStorage.setItem('messages', JSON.stringify(messages));
+    }
+
+    function sendMessage() {
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
+
+        if (message !== '') {
+            const newMessage = { sender: 'Você', message, delivered: false };
+            messages.push(newMessage);
+            updateLocalStorage();
+            addMessageToChat(newMessage, 'sender');
+            messageInput.value = '';
+            setTimeout(() => {
+                checkDelivery(newMessage);
+            }, 1000);
+        }
+    }
+
+    function addMessageToChat(messageObj, className) {
+        const messageContainer = document.getElementById('message-container');
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', className);
+        messageElement.textContent = `${messageObj.sender}: ${messageObj.message}`;
+        messageContainer.appendChild(messageElement);
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    function receiveMessages() {
+        messages.forEach(message => {
+            if (message.sender !== 'Você') {
+                addMessageToChat(message, 'received');
+            }
+        });
+    }
+
+    function checkDelivery(message) {
+        message.delivered = true;
+        updateLocalStorage();
+        const deliveryStatus = document.createElement('div');
+        deliveryStatus.textContent = 'Entregue';
+        deliveryStatus.classList.add('delivery-status');
+        const lastMessage = document.getElementById('message-container').lastChild;
+        lastMessage.appendChild(deliveryStatus);
+        document.getElementById('message-container').scrollTop = document.getElementById('message-container').scrollHeight;
+    }
+
+    function typingEvent() {
+        otherTyping = true;
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            otherTyping = false;
+        }, 2000);
+    }
+
+    window.onload = () => {
+        receiveMessages();
+    };
+</script>
+</body>
+</html>
