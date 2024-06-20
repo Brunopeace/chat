@@ -1,31 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Chat com PeerJS</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeerJS Chat</title>
   <style>
-    body { font: 14px sans-serif; }
-    #messages { list-style-type: none; padding: 0; }
-    #messages li { padding: 8px; margin-bottom: 4px; border-radius: 4px; }
-    #messages .sent { background-color: #e3f2fd; } /* Light blue for sent messages */
-    #messages .received { background-color: #f0f0f0; } /* Light gray for received messages */
-    #form { display: flex; }
-    #input { flex: 1; padding: 10px; font-size: 14px; }
-    #sendButton { padding: 10px; font-size: 14px; }
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background-color: #f2f2f2;
+    }
+
+    header {
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap; /* Permitir que os itens do container se ajustem em linhas */
+      max-width: 800px;
+      margin: 20px auto;
+    }
+
+    .container section {
+      flex: 1 1 100%; /* Ocupar todo o espaço disponível */
+      margin: 0 10px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .container h2 {
+      color: #333;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .input-group input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .input-group button {
+      padding: 10px 20px;
+      font-size: 14px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #messages {
+      list-style-type: none;
+      padding: 0;
+      margin-bottom: 20px;
+    }
+
+    #messages li {
+      padding: 8px;
+      margin-bottom: 4px;
+      border-radius: 4px;
+    }
+
+    #messages .sent {
+      background-color: #e3f2fd;
+    }
+
+    #messages .received {
+      background-color: #f0f0f0;
+    }
+
+    #form {
+      display: flex;
+      align-items: center;
+      background-color: #fff;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    #input {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px 0 0 4px;
+    }
+
+    #sendButton {
+      padding: 10px 20px;
+      font-size: 14px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 0 4px 4px 0;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        flex-direction: column; /* Empilhar os itens verticalmente em telas menores */
+      }
+
+      .container section {
+        margin-bottom: 10px;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Chat com PeerJS</h1>
-  <div>
-    Seu ID: <input id="your-id" value="meu-id-fixo" />
-    <button id="connect-my-peer">Usar ID Fixo</button>
+  <header>
+    <h1>PeerJS Chat</h1>
+  </header>
+  
+  <div class="container">
+    <section id="self-info">
+      <h2>Seu ID:</h2>
+      <div class="input-group">
+        <input id="your-id" type="text" value="meu-id-fixo" disabled>
+        <button id="connect-my-peer">Usar ID Fixo</button>
+      </div>
+    </section>
+
+    <section id="connect-peer">
+      <h2>Conectar ao ID:</h2>
+      <div class="input-group">
+        <input id="peer-id-input" type="text" placeholder="Insira o ID do peer">
+        <button id="connect-button">Conectar</button>
+      </div>
+    </section>
   </div>
-  <div>
-    Conectar ao ID: <input id="peer-id-input" /><button id="connect-button">Connect</button>
-  </div>
-  <ul id="messages"></ul>
-  <form id="form" action="">
-    <input id="input" autocomplete="off" /><button id="sendButton">Send</button>
-  </form>
+
+  <main>
+    <ul id="messages"></ul>
+
+    <form id="form" action="">
+      <input id="input" type="text" autocomplete="off" placeholder="Digite sua mensagem...">
+      <button id="sendButton">Enviar</button>
+    </form>
+  </main>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.3.2/peerjs.min.js"></script>
   <script>
     let peer;
