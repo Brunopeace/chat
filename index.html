@@ -181,12 +181,6 @@
       background-color: #388E3C;
     }
 
-    .typing-indicator {
-      margin: 10px 0;
-      font-style: italic;
-      color: #666;
-    }
-
     @media (max-width: 600px) {
       .input-group input[type="text"], .input-group input[type="file"], .input-group button {
         flex: 1 1 100%;
@@ -199,8 +193,14 @@
 
       main {
         height: 100vh;
-        width: 50vh;
+        width: 100%;
       }
+    }
+
+    #typing-indicator {
+      font-style: italic;
+      color: #555;
+      margin: 10px;
     }
   </style>
 </head>
@@ -233,8 +233,7 @@
   </div>
 
   <main id="messages"></main>
-
-  <div class="typing-indicator" id="typing-indicator"></div>
+  <div id="typing-indicator"></div>
 
   <form id="form" action="">
     <input id="input" type="text" autocomplete="off" placeholder="Digite sua mensagem...">
@@ -246,6 +245,7 @@
     let peer;
     let conn;
     let avatarUrl = ''; // Avatar padrão
+    let typingTimeout;
 
     // Carregar o ID fixo do localStorage, se disponível
     const storedId = localStorage.getItem('peer-id');
@@ -281,25 +281,15 @@
 
     document.getElementById('connect-button').addEventListener('click', function() {
       const peerId = document.getElementById('peer-id-input').value;
-      connectToPeer(peerId);
-    });
-
-    function connectToPeer(peerId) {
       conn = peer.connect(peerId);
-      setupConnection();
-    }
-
-    function setupConnection() {
-      if (!conn) return;
 
       conn.on('open', function() {
         conn.on('data', function(data) {
-          if (data.type === 'message') {
-            addMessage(data.message, data.avatar, 'received');
-          } else if (data.type === 'typing') {
-            displayTypingIndicator(true);
-          } else if (data.type === 'stoppedTyping') {
-            displayTypingIndicator(false);
+          if (data.typing) {
+            showTypingIndicator(data.typing);
+          } else {
+            addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
+            hideTypingIndicator();
           }
         });
 
@@ -308,26 +298,26 @@
           const input = document.getElementById('input');
           if (input.value) {
             const messageData = {
-              type: 'message',
               message: input.value,
               avatar: avatarUrl
             };
             conn.send(messageData);
-            addMessage(input.value, avatarUrl, 'sent');
+            addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
             input.value = '';
-            sendStoppedTyping();
           }
         });
 
-        const inputField = document.getElementById('input');
-        inputField.addEventListener('keydown', sendTyping);
-        inputField.addEventListener('keyup', sendStoppedTyping);
+        document.getElementById('input').addEventListener('input', function() {
+          conn.send({ typing: true });
+          clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => conn.send({ typing: false }), 3000);
+        });
       });
-    }
+    });
 
     function initializePeer(id) {
       if (peer) {
-        peer.destroy();
+        peer.destroy(); // Destruir o peer existente, se houver
       }
       peer = new Peer(id);
 
@@ -337,7 +327,34 @@
 
       peer.on('connection', function(connection) {
         conn = connection;
-        setupConnection();
+        conn.on('data', function(data) {
+          if (data.typing) {
+            showTypingIndicator(data.typing);
+          } else {
+            addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
+            hideTypingIndicator();
+          }
+        });
+
+        document.getElementById('form').addEventListener('submit', function(e) {
+          e.preventDefault();
+          const input = document.getElementById('input');
+          if (input.value) {
+            const messageData = {
+              message: input.value,
+              avatar: avatarUrl
+            };
+            conn.send(messageData);
+            addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
+            input.value = '';
+          }
+        });
+
+        document.getElementById('input').addEventListener('input', function() {
+          conn.send({ typing: true });
+          clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => conn.send({ typing: false }), 3000);
+        });
       });
     }
 
@@ -359,26 +376,25 @@
 
       messages.appendChild(messageElement);
 
+      // Rolar para a última mensagem
       messages.scrollTop = messages.scrollHeight;
     }
 
-    function sendTyping() {
-      if (conn && conn.open) {
-        conn.send({ type: 'typing' });
-      }
-    }
-
-    function sendStoppedTyping() {
-      if (conn && conn.open) {
-        conn.send({ type: 'stoppedTyping' });
-      }
-    }
-
-    function displayTypingIndicator(isTyping) {
+    function showTypingIndicator(typing) {
       const typingIndicator = document.getElementById('typing-indicator');
-      typingIndicator.textContent = isTyping ? 'A outra pessoa está digitando...' : '';
+      if (typing) {
+        typingIndicator.textContent = 'A outra pessoa está digitando...';
+      } else {
+        typingIndicator.textContent = '';
+      }
     }
 
+    function hideTypingIndicator() {
+      const typingIndicator = document.getElementById('typing-indicator');
+      typingIndicator.textContent = '';
+    }
+
+    // Inicializar o peer com um ID fixo, se disponível
     if (storedId) {
       initializePeer(storedId);
     }
