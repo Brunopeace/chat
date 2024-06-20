@@ -182,9 +182,10 @@
     }
 
     #typing-indicator {
+      display: none;
+      padding: 10px;
       font-style: italic;
-      color: #888;
-      margin-top: 10px;
+      color: #999;
     }
 
     @media (max-width: 600px) {
@@ -233,7 +234,8 @@
   </div>
 
   <main id="messages"></main>
-  <div id="typing-indicator"></div>
+
+  <div id="typing-indicator">A pessoa está digitando...</div>
 
   <form id="form" action="">
     <input id="input" type="text" autocomplete="off" placeholder="Digite sua mensagem...">
@@ -245,6 +247,7 @@
     let peer;
     let conn;
     let avatarUrl = ''; // Avatar padrão
+    let typingTimeout;
 
     // Carregar o ID fixo do localStorage, se disponível
     const storedId = localStorage.getItem('peer-id');
@@ -272,7 +275,7 @@
         const reader = new FileReader();
         reader.onload = function(event) {
           avatarUrl = event.target.result;
-          alert(`Avatar carregado com sucesso!`);
+          alert('Avatar carregado com sucesso!');
         };
         reader.readAsDataURL(file);
       }
@@ -283,33 +286,41 @@
       conn = peer.connect(peerId);
 
       conn.on('open', function() {
-        conn.on('data', function(data) {
-          if (data.typing) {
-            showTypingIndicator(data.typing);
-          } else {
+          conn.on('data', function(data) {
             addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
             hideTypingIndicator();
-          }
+          });
+
+          document.getElementById('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('input');
+            if (input.value) {
+              const messageData = {
+                message: input.value,
+                avatar: avatarUrl
+              };
+              conn.send(messageData);
+              addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
+              input.value = '';
+            }
+          });
+
+          document.getElementById('input').addEventListener('input', function() {
+            clearTimeout(typingTimeout);
+            conn.send({ typing: true }); // Enviar indicador de digitação
+            typingTimeout = setTimeout(function() {
+              conn.send({ typing: false }); // Enviar indicador de parada de digitação
+            }, 1000);
+          });
         });
 
-        document.getElementById('form').addEventListener('submit', function(e) {
-          e.preventDefault();
-          const input = document.getElementById('input');
-          if (input.value) {
-            const messageData = {
-              message: input.value,
-              avatar: avatarUrl
-            };
-            conn.send(messageData);
-            addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
-            input.value = '';
-            conn.send({ typing: false });
-          }
-        });
-
-        document.getElementById('input').addEventListener('input', function() {
-          conn.send({ typing: true });
-        });
+      // Exibir indicador de digitação
+      conn.on('data', function(data) {
+        if (data.typing) {
+          showTypingIndicator();
+        } else {
+          hideTypingIndicator();
+        }
       });
     });
 
@@ -327,10 +338,10 @@
         conn = connection;
         conn.on('data', function(data) {
           if (data.typing) {
-            showTypingIndicator(data.typing);
+            showTypingIndicator();
           } else {
-            addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
             hideTypingIndicator();
+            addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
           }
         });
 
@@ -345,12 +356,15 @@
             conn.send(messageData);
             addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
             input.value = '';
-            conn.send({ typing: false });
           }
         });
 
         document.getElementById('input').addEventListener('input', function() {
-          conn.send({ typing: true });
+          clearTimeout(typingTimeout);
+          conn.send({ typing: true }); // Enviar indicador de digitação
+          typingTimeout = setTimeout(function() {
+            conn.send({ typing: false }); // Enviar indicador de parada de digitação
+          }, 1000);
         });
       });
     }
@@ -377,18 +391,12 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
-    function showTypingIndicator(isTyping) {
-      const typingIndicator = document.getElementById('typing-indicator');
-      if (isTyping) {
-        typingIndicator.textContent = 'A pessoa está digitando...';
-      } else {
-        typingIndicator.textContent = '';
-      }
+    function showTypingIndicator() {
+      document.getElementById('typing-indicator').style.display = 'block';
     }
 
     function hideTypingIndicator() {
-      const typingIndicator = document.getElementById('typing-indicator');
-      typingIndicator.textContent = '';
+      document.getElementById('typing-indicator').style.display = 'none';
     }
 
     // Inicializar o peer com um ID fixo, se disponível
