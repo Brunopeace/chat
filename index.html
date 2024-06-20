@@ -5,7 +5,9 @@
   <style>
     body { font: 14px sans-serif; }
     #messages { list-style-type: none; padding: 0; }
-    #messages li { padding: 8px; margin-bottom: 4px; background: #f4f4f4; border-radius: 4px; }
+    #messages li { padding: 8px; margin-bottom: 4px; border-radius: 4px; }
+    #messages .sent { background-color: #e3f2fd; } /* Light blue for sent messages */
+    #messages .received { background-color: #f0f0f0; } /* Light gray for received messages */
     #form { display: flex; }
     #input { flex: 1; padding: 10px; font-size: 14px; }
     #sendButton { padding: 10px; font-size: 14px; }
@@ -49,7 +51,7 @@
 
       conn.on('open', function() {
         conn.on('data', function(data) {
-          addMessage(data);
+          addMessage(data, 'received'); // Marking messages as received
         });
 
         document.getElementById('form').addEventListener('submit', function(e) {
@@ -57,7 +59,7 @@
           const input = document.getElementById('input');
           if (input.value) {
             conn.send(input.value);
-            addMessage(input.value);
+            addMessage(input.value, 'sent'); // Marking messages as sent
             input.value = '';
           }
         });
@@ -77,7 +79,7 @@
       peer.on('connection', function(connection) {
         conn = connection;
         conn.on('data', function(data) {
-          addMessage(data);
+          addMessage(data, 'received'); // Marking messages as received
         });
 
         document.getElementById('form').addEventListener('submit', function(e) {
@@ -85,16 +87,17 @@
           const input = document.getElementById('input');
           if (input.value) {
             conn.send(input.value);
-            addMessage(input.value);
+            addMessage(input.value, 'sent'); // Marking messages as sent
             input.value = '';
           }
         });
       });
     }
 
-    function addMessage(message) {
+    function addMessage(message, type) {
       const item = document.createElement('li');
       item.textContent = message;
+      item.classList.add(type); // Add a class to differentiate sent vs received messages
       document.getElementById('messages').appendChild(item);
       window.scrollTo(0, document.body.scrollHeight);
     }
