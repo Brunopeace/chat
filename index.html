@@ -6,35 +6,40 @@
   <title>PeerJS Chat</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
       line-height: 1.6;
       margin: 0;
       padding: 0;
-      background-color: #f2f2f2;
+      background: linear-gradient(to right, #4CAF50, #66BB6A);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
     header {
-      background-color: #4CAF50;
+      background: linear-gradient(to right, #2E7D32, #388E3C);
       color: white;
       text-align: center;
-      padding: 10px 0;
+      padding: 20px 0;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
     .container {
+      flex: 1;
       display: flex;
       justify-content: space-around;
-      flex-wrap: wrap; /* Permitir que os itens do container se ajustem em linhas */
+      flex-wrap: wrap;
       max-width: 800px;
       margin: 20px auto;
     }
 
     .container section {
-      flex: 1 1 100%; /* Ocupar todo o espaço disponível */
+      flex: 1 1 100%;
       margin: 0 10px;
       background-color: #fff;
       padding: 20px;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       margin-bottom: 20px;
     }
 
@@ -46,17 +51,26 @@
       display: flex;
       align-items: center;
       margin-top: 10px;
+      flex-wrap: wrap;
     }
 
-    .input-group input[type="text"] {
-      flex: 1;
+    .input-group input[type="text"], .input-group input[type="file"] {
+      flex: 1 1 100%;
       padding: 10px;
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .input-group input[type="text"]:focus, .input-group input[type="file"]:focus {
+      border-color: #4CAF50;
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
     }
 
     .input-group button {
+      flex: 1 1 48%;
       padding: 10px 20px;
       font-size: 14px;
       background-color: #4CAF50;
@@ -64,6 +78,22 @@
       border: none;
       cursor: pointer;
       border-radius: 4px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      transition: background-color 0.3s ease;
+    }
+
+    .input-group button:hover {
+      background-color: #388E3C;
+    }
+
+    #changeIdButton {
+      background-color: #ff9800;
+      margin-right: 0;
+    }
+
+    #changeIdButton:hover {
+      background-color: #e65100;
     }
 
     main {
@@ -71,28 +101,44 @@
       margin: 20px auto;
       background-color: #fff;
       padding: 20px;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column-reverse;
+      height: 60vh;
+      overflow-y: auto;
     }
 
-    #messages {
-      list-style-type: none;
-      padding: 0;
-      margin-bottom: 20px;
+    .message {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
     }
 
-    #messages li {
-      padding: 8px;
-      margin-bottom: 4px;
-      border-radius: 4px;
+    .message .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
     }
 
-    #messages .sent {
-      background-color: #e3f2fd;
-    }
-
-    #messages .received {
+    .message .content {
+      max-width: 70%;
+      padding: 10px;
+      border-radius: 10px;
       background-color: #f0f0f0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .sent .content {
+      background-color: #e3f2fd;
+      align-self: flex-end;
+    }
+
+    .received .content {
+      background-color: #f0f0f0;
+      align-self: flex-start;
     }
 
     #form {
@@ -100,9 +146,10 @@
       align-items: center;
       background-color: #fff;
       padding: 10px;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      bottom: 0;
     }
 
     #input {
@@ -111,6 +158,12 @@
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 4px 0 0 4px;
+      transition: all 0.3s ease;
+    }
+
+    #input:focus {
+      border-color: #4CAF50;
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
     }
 
     #sendButton {
@@ -121,15 +174,25 @@
       border: none;
       cursor: pointer;
       border-radius: 0 4px 4px 0;
+      transition: background-color 0.3s ease;
+    }
+
+    #sendButton:hover {
+      background-color: #388E3C;
     }
 
     @media (max-width: 600px) {
-      .container {
-        flex-direction: column; /* Empilhar os itens verticalmente em telas menores */
+      .input-group input[type="text"], .input-group input[type="file"], .input-group button {
+        flex: 1 1 100%;
+        margin-right: 0;
       }
 
       .container section {
         margin-bottom: 10px;
+      }
+
+      main {
+        height: 50vh;
       }
     }
   </style>
@@ -138,13 +201,18 @@
   <header>
     <h1>PeerJS Chat</h1>
   </header>
-  
+
   <div class="container">
     <section id="self-info">
       <h2>Seu ID:</h2>
       <div class="input-group">
-        <input id="your-id" type="text" value="meu-id-fixo" disabled>
+        <input id="your-id" type="text" value="meu-id-fixo">
+        <button id="changeIdButton">Alterar ID</button>
         <button id="connect-my-peer">Usar ID Fixo</button>
+      </div>
+      <div class="input-group">
+        <label for="upload-avatar">Carregar Avatar:</label>
+        <input id="upload-avatar" type="file" accept="image/*">
       </div>
     </section>
 
@@ -157,19 +225,18 @@
     </section>
   </div>
 
-  <main>
-    <ul id="messages"></ul>
+  <main id="messages"></main>
 
-    <form id="form" action="">
-      <input id="input" type="text" autocomplete="off" placeholder="Digite sua mensagem...">
-      <button id="sendButton">Enviar</button>
-    </form>
-  </main>
+  <form id="form" action="">
+    <input id="input" type="text" autocomplete="off" placeholder="Digite sua mensagem...">
+    <button id="sendButton">Enviar</button>
+  </form>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.3.2/peerjs.min.js"></script>
   <script>
     let peer;
     let conn;
+    let avatarUrl = ''; // Avatar padrão
 
     // Carregar o ID fixo do localStorage, se disponível
     const storedId = localStorage.getItem('peer-id');
@@ -185,26 +252,48 @@
       initializePeer(fixedId);
     });
 
+    document.getElementById('changeIdButton').addEventListener('click', function() {
+      const newId = document.getElementById('your-id').value;
+      localStorage.setItem('peer-id', newId);
+      alert(`ID alterado para: ${newId}`);
+    });
+
+    document.getElementById('upload-avatar').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          avatarUrl = event.target.result;
+          alert(`Avatar carregado com sucesso!`);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
     document.getElementById('connect-button').addEventListener('click', function() {
       const peerId = document.getElementById('peer-id-input').value;
       conn = peer.connect(peerId);
 
       conn.on('open', function() {
-        conn.on('data', function(data) {
-          addMessage(data, 'received'); // Marking messages as received
-        });
+          conn.on('data', function(data) {
+            addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
+          });
 
-        document.getElementById('form').addEventListener('submit', function(e) {
-          e.preventDefault();
-          const input = document.getElementById('input');
-          if (input.value) {
-            conn.send(input.value);
-            addMessage(input.value, 'sent'); // Marking messages as sent
-            input.value = '';
-          }
+          document.getElementById('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('input');
+            if (input.value) {
+              const messageData = {
+                message: input.value,
+                avatar: avatarUrl
+              };
+              conn.send(messageData);
+              addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
+              input.value = '';
+            }
+          });
         });
       });
-    });
 
     function initializePeer(id) {
       if (peer) {
@@ -219,27 +308,50 @@
       peer.on('connection', function(connection) {
         conn = connection;
         conn.on('data', function(data) {
-          addMessage(data, 'received'); // Marking messages as received
+          addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
         });
 
         document.getElementById('form').addEventListener('submit', function(e) {
           e.preventDefault();
           const input = document.getElementById('input');
           if (input.value) {
-            conn.send(input.value);
-            addMessage(input.value, 'sent'); // Marking messages as sent
+            const messageData = {
+              message: input.value,
+              avatar: avatarUrl
+            };
+            conn.send(messageData);
+            addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
             input.value = '';
           }
         });
       });
     }
 
-    function addMessage(message, type) {
-      const item = document.createElement('li');
-      item.textContent = message;
-      item.classList.add(type); // Add a class to differentiate sent vs received messages
-      document.getElementById('messages').appendChild(item);
-      window.scrollTo(0, document.body.scrollHeight);
+    function addMessage(message, avatar, type) {
+      const messages = document.getElementById('messages');
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message', type);
+
+      const avatarElement = document.createElement('img');
+      avatarElement.src = avatar;
+      avatarElement.alt = 'Avatar';
+      avatarElement.classList.add('avatar');
+      messageElement.appendChild(avatarElement);
+
+      const contentElement = document.createElement('div');
+      contentElement.textContent = message;
+      contentElement.classList.add('content');
+      messageElement.appendChild(contentElement);
+
+      messages.appendChild(messageElement);
+
+      // Rolar para a última mensagem
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    // Inicializar o peer com um ID fixo, se disponível
+    if (storedId) {
+      initializePeer(storedId);
     }
   </script>
 </body>
