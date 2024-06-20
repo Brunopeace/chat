@@ -181,6 +181,12 @@
       background-color: #388E3C;
     }
 
+    .typing-indicator {
+      margin: 10px 0;
+      font-style: italic;
+      color: #666;
+    }
+
     @media (max-width: 600px) {
       .input-group input[type="text"], .input-group input[type="file"], .input-group button {
         flex: 1 1 100%;
@@ -228,6 +234,8 @@
 
   <main id="messages"></main>
 
+  <div class="typing-indicator" id="typing-indicator"></div>
+
   <form id="form" action="">
     <input id="input" type="text" autocomplete="off" placeholder="Digite sua mensagem...">
     <button id="sendButton">Enviar</button>
@@ -273,11 +281,26 @@
 
     document.getElementById('connect-button').addEventListener('click', function() {
       const peerId = document.getElementById('peer-id-input').value;
+      connectToPeer(peerId);
+    });
+
+    function connectToPeer(peerId) {
       conn = peer.connect(peerId);
+      setupConnection();
+    }
+
+    function setupConnection() {
+      if (!conn) return;
 
       conn.on('open', function() {
         conn.on('data', function(data) {
-          addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
+          if (data.type === 'message') {
+            addMessage(data.message, data.avatar, 'received');
+          } else if (data.type === 'typing') {
+            displayTypingIndicator(true);
+          } else if (data.type === 'stoppedTyping') {
+            displayTypingIndicator(false);
+          }
         });
 
         document.getElementById('form').addEventListener('submit', function(e) {
@@ -285,23 +308,26 @@
           const input = document.getElementById('input');
           if (input.value) {
             const messageData = {
+              type: 'message',
               message: input.value,
               avatar: avatarUrl
             };
             conn.send(messageData);
-            addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
+            addMessage(input.value, avatarUrl, 'sent');
             input.value = '';
+            sendStoppedTyping();
           }
         });
 
-        // Salvar o ID do peer conectado no localStorage
-        localStorage.setItem('connected-peer-id', peerId);
+        const inputField = document.getElementById('input');
+        inputField.addEventListener('keydown', sendTyping);
+        inputField.addEventListener('keyup', sendStoppedTyping);
       });
-    });
+    }
 
     function initializePeer(id) {
       if (peer) {
-        peer.destroy(); // Destruir o peer existente, se houver
+        peer.destroy();
       }
       peer = new Peer(id);
 
@@ -311,26 +337,7 @@
 
       peer.on('connection', function(connection) {
         conn = connection;
-        conn.on('data', function(data) {
-          addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
-        });
-
-        document.getElementById('form').addEventListener('submit', function(e) {
-          e.preventDefault();
-          const input = document.getElementById('input');
-          if (input.value) {
-            const messageData = {
-              message: input.value,
-              avatar: avatarUrl
-            };
-            conn.send(messageData);
-            addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
-            input.value = '';
-          }
-        });
-
-        // Salvar o ID do peer conectado no localStorage
-        localStorage.setItem('connected-peer-id', connection.peer);
+        setupConnection();
       });
     }
 
@@ -352,21 +359,28 @@
 
       messages.appendChild(messageElement);
 
-      // Rolar para a última mensagem
       messages.scrollTop = messages.scrollHeight;
     }
 
-    // Inicializar o peer com um ID fixo, se disponível
-    if (storedId) {
-      initializePeer(storedId);
+    function sendTyping() {
+      if (conn && conn.open) {
+        conn.send({ type: 'typing' });
+      }
     }
 
-    // Recuperar a conexão com o peer, se disponível
-    const connectedPeerId = localStorage.getItem('connected-peer-id');
-    if (connectedPeerId) {
-      const peerIdInput = document.getElementById('peer-id-input');
-      peerIdInput.value = connectedPeerId;
-      document.getElementById('connect-button').click();
+    function sendStoppedTyping() {
+      if (conn && conn.open) {
+        conn.send({ type: 'stoppedTyping' });
+      }
+    }
+
+    function displayTypingIndicator(isTyping) {
+      const typingIndicator = document.getElementById('typing-indicator');
+      typingIndicator.textContent = isTyping ? 'A outra pessoa está digitando...' : '';
+    }
+
+    if (storedId) {
+      initializePeer(storedId);
     }
   </script>
 </body>
