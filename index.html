@@ -105,8 +105,8 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       display: flex;
       flex-direction: column-reverse;
-      height: 60vh;
       overflow-y: auto;
+      flex-grow: 1;
     }
 
     .message {
@@ -181,13 +181,6 @@
       background-color: #388E3C;
     }
 
-    #typing-indicator {
-      display: none;
-      padding: 10px;
-      font-style: italic;
-      color: #999;
-    }
-
     @media (max-width: 600px) {
       .input-group input[type="text"], .input-group input[type="file"], .input-group button {
         flex: 1 1 100%;
@@ -218,10 +211,6 @@
         <button id="changeIdButton">Alterar ID</button>
         <button id="connect-my-peer">Usar ID Fixo</button>
       </div>
-      <div class="input-group">
-        <label for="upload-avatar">Carregar Avatar:</label>
-        <input id="upload-avatar" type="file" accept="image/*">
-      </div>
     </section>
 
     <section id="connect-peer">
@@ -235,8 +224,6 @@
 
   <main id="messages"></main>
 
-  <div id="typing-indicator">A pessoa está digitando...</div>
-
   <form id="form" action="">
     <input id="input" type="text" autocomplete="off" placeholder="Digite sua mensagem...">
     <button id="sendButton">Enviar</button>
@@ -246,10 +233,7 @@
   <script>
     let peer;
     let conn;
-    let avatarUrl = ''; // Avatar padrão
-    let typingTimeout;
 
-    // Carregar o ID fixo do localStorage, se disponível
     const storedId = localStorage.getItem('peer-id');
     if (storedId) {
       document.getElementById('your-id').value = storedId;
@@ -258,7 +242,6 @@
 
     document.getElementById('connect-my-peer').addEventListener('click', function() {
       const fixedId = document.getElementById('your-id').value;
-      // Salvar o ID fixo no localStorage
       localStorage.setItem('peer-id', fixedId);
       initializePeer(fixedId);
     });
@@ -269,64 +252,34 @@
       alert(`ID alterado para: ${newId}`);
     });
 
-    document.getElementById('upload-avatar').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          avatarUrl = event.target.result;
-          alert('Avatar carregado com sucesso!');
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
     document.getElementById('connect-button').addEventListener('click', function() {
       const peerId = document.getElementById('peer-id-input').value;
       conn = peer.connect(peerId);
 
       conn.on('open', function() {
-          conn.on('data', function(data) {
-            addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
-            hideTypingIndicator();
-          });
-
-          document.getElementById('form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const input = document.getElementById('input');
-            if (input.value) {
-              const messageData = {
-                message: input.value,
-                avatar: avatarUrl
-              };
-              conn.send(messageData);
-              addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
-              input.value = '';
-            }
-          });
-
-          document.getElementById('input').addEventListener('input', function() {
-            clearTimeout(typingTimeout);
-            conn.send({ typing: true }); // Enviar indicador de digitação
-            typingTimeout = setTimeout(function() {
-              conn.send({ typing: false }); // Enviar indicador de parada de digitação
-            }, 1000);
-          });
+        conn.on('data', function(data) {
+          addMessage(data.message, data.avatar, 'received');
         });
 
-      // Exibir indicador de digitação
-      conn.on('data', function(data) {
-        if (data.typing) {
-          showTypingIndicator();
-        } else {
-          hideTypingIndicator();
-        }
+        document.getElementById('form').addEventListener('submit', function(e) {
+          e.preventDefault();
+          const input = document.getElementById('input');
+          if (input.value) {
+            const messageData = {
+              message: input.value,
+              avatar: ''
+            };
+            conn.send(messageData);
+            addMessage(input.value, '', 'sent');
+            input.value = '';
+          }
+        });
       });
     });
 
     function initializePeer(id) {
       if (peer) {
-        peer.destroy(); // Destruir o peer existente, se houver
+        peer.destroy();
       }
       peer = new Peer(id);
 
@@ -337,12 +290,7 @@
       peer.on('connection', function(connection) {
         conn = connection;
         conn.on('data', function(data) {
-          if (data.typing) {
-            showTypingIndicator();
-          } else {
-            hideTypingIndicator();
-            addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
-          }
+          addMessage(data.message, data.avatar, 'received');
         });
 
         document.getElementById('form').addEventListener('submit', function(e) {
@@ -351,20 +299,12 @@
           if (input.value) {
             const messageData = {
               message: input.value,
-              avatar: avatarUrl
+              avatar: ''
             };
             conn.send(messageData);
-            addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
+            addMessage(input.value, '', 'sent');
             input.value = '';
           }
-        });
-
-        document.getElementById('input').addEventListener('input', function() {
-          clearTimeout(typingTimeout);
-          conn.send({ typing: true }); // Enviar indicador de digitação
-          typingTimeout = setTimeout(function() {
-            conn.send({ typing: false }); // Enviar indicador de parada de digitação
-          }, 1000);
         });
       });
     }
@@ -374,11 +314,13 @@
       const messageElement = document.createElement('div');
       messageElement.classList.add('message', type);
 
-      const avatarElement = document.createElement('img');
-      avatarElement.src = avatar;
-      avatarElement.alt = 'Avatar';
-      avatarElement.classList.add('avatar');
-      messageElement.appendChild(avatarElement);
+      if (avatar) {
+        const avatarElement = document.createElement('img');
+        avatarElement.src = avatar;
+        avatarElement.alt = 'Avatar';
+        avatarElement.classList.add('avatar');
+        messageElement.appendChild(avatarElement);
+      }
 
       const contentElement = document.createElement('div');
       contentElement.textContent = message;
@@ -387,16 +329,8 @@
 
       messages.appendChild(messageElement);
 
-      // Rolar para a última mensagem
+      // Rolagem automática para a última mensagem
       messages.scrollTop = messages.scrollHeight;
-    }
-
-    function showTypingIndicator() {
-      document.getElementById('typing-indicator').style.display = 'block';
-    }
-
-    function hideTypingIndicator() {
-      document.getElementById('typing-indicator').style.display = 'none';
     }
 
     // Inicializar o peer com um ID fixo, se disponível
