@@ -10,14 +10,14 @@
       line-height: 1.6;
       margin: 0;
       padding: 0;
-      background: #f2f2f2;
+      background: linear-gradient(to right, #4CAF50, #66BB6A);
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
 
     header {
-      background: #4CAF50;
+      background: linear-gradient(to right, #2E7D32, #388E3C);
       color: white;
       text-align: center;
       padding: 20px 0;
@@ -25,15 +25,16 @@
     }
 
     .container {
+      flex: 1;
       display: flex;
-      justify-content: center;
-      margin: 20px auto;
+      justify-content: space-around;
+      flex-wrap: wrap;
       max-width: 800px;
-      padding: 0 10px;
+      margin: 20px auto;
     }
 
-    section {
-      flex: 1;
+    .container section {
+      flex: 1 1 100%;
       margin: 0 10px;
       background-color: #fff;
       padding: 20px;
@@ -42,19 +43,19 @@
       margin-bottom: 20px;
     }
 
-    h2 {
+    .container h2 {
       color: #333;
-      margin-bottom: 10px;
     }
 
     .input-group {
+      display: flex;
+      align-items: center;
       margin-top: 10px;
+      flex-wrap: wrap;
     }
 
-    .input-group input[type="text"], 
-    .input-group input[type="file"],
-    .input-group button {
-      width: 100%;
+    .input-group input[type="text"], .input-group input[type="file"] {
+      flex: 1 1 100%;
       padding: 10px;
       font-size: 14px;
       border: 1px solid #ccc;
@@ -63,33 +64,48 @@
       transition: all 0.3s ease;
     }
 
-    .input-group input[type="text"]:focus, 
-    .input-group input[type="file"]:focus {
+    .input-group input[type="text"]:focus, .input-group input[type="file"]:focus {
       border-color: #4CAF50;
       box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
     }
 
     .input-group button {
+      flex: 1 1 48%;
+      padding: 10px 20px;
+      font-size: 14px;
       background-color: #4CAF50;
       color: white;
       border: none;
       cursor: pointer;
       border-radius: 4px;
-      margin-bottom: 0;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      transition: background-color 0.3s ease;
     }
 
     .input-group button:hover {
       background-color: #388E3C;
     }
 
+    #changeIdButton {
+      background-color: #ff9800;
+      margin-right: 0;
+    }
+
+    #changeIdButton:hover {
+      background-color: #e65100;
+    }
+
     main {
       max-width: 800px;
-      margin: 0 auto;
+      margin: 20px auto;
       background-color: #fff;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      flex: 1;
+      display: flex;
+      flex-direction: column-reverse;
+      height: 60vh;
       overflow-y: auto;
     }
 
@@ -97,6 +113,7 @@
       display: flex;
       align-items: flex-start;
       margin-bottom: 10px;
+      transition: all 0.3s ease;
     }
 
     .message .avatar {
@@ -133,7 +150,6 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       position: sticky;
       bottom: 0;
-      margin: 20px 0;
     }
 
     #input {
@@ -166,20 +182,18 @@
     }
 
     @media (max-width: 600px) {
-      .container {
-        flex-direction: column;
-        align-items: center;
+      .input-group input[type="text"], .input-group input[type="file"], .input-group button {
+        flex: 1 1 100%;
+        margin-right: 0;
       }
 
-      section {
-        width: 100%;
-        margin: 0;
+      .container section {
+        margin-bottom: 10px;
       }
 
       main {
-        height: 50vh;
-        width: calc(100vw - 40px);
-        margin: 20px 0;
+        height: 100vh;
+        width: 50vh;
       }
     }
   </style>
@@ -279,6 +293,9 @@
             input.value = '';
           }
         });
+
+        // Salvar o ID do peer conectado no localStorage
+        localStorage.setItem('connected-peer-id', peerId);
       });
     });
 
@@ -311,6 +328,9 @@
             input.value = '';
           }
         });
+
+        // Salvar o ID do peer conectado no localStorage
+        localStorage.setItem('connected-peer-id', connection.peer);
       });
     }
 
@@ -339,6 +359,14 @@
     // Inicializar o peer com um ID fixo, se disponível
     if (storedId) {
       initializePeer(storedId);
+    }
+
+    // Recuperar a conexão com o peer, se disponível
+    const connectedPeerId = localStorage.getItem('connected-peer-id');
+    if (connectedPeerId) {
+      const peerIdInput = document.getElementById('peer-id-input');
+      peerIdInput.value = connectedPeerId;
+      document.getElementById('connect-button').click();
     }
   </script>
 </body>
