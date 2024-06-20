@@ -181,6 +181,12 @@
       background-color: #388E3C;
     }
 
+    #typing-indicator {
+      font-style: italic;
+      color: #888;
+      margin-top: 10px;
+    }
+
     @media (max-width: 600px) {
       .input-group input[type="text"], .input-group input[type="file"], .input-group button {
         flex: 1 1 100%;
@@ -193,14 +199,8 @@
 
       main {
         height: 100vh;
-        width: 100%;
+        width: 50vh;
       }
-    }
-
-    #typing-indicator {
-      font-style: italic;
-      color: #555;
-      margin: 10px;
     }
   </style>
 </head>
@@ -245,7 +245,6 @@
     let peer;
     let conn;
     let avatarUrl = ''; // Avatar padrão
-    let typingTimeout;
 
     // Carregar o ID fixo do localStorage, se disponível
     const storedId = localStorage.getItem('peer-id');
@@ -304,13 +303,12 @@
             conn.send(messageData);
             addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
             input.value = '';
+            conn.send({ typing: false });
           }
         });
 
         document.getElementById('input').addEventListener('input', function() {
           conn.send({ typing: true });
-          clearTimeout(typingTimeout);
-          typingTimeout = setTimeout(() => conn.send({ typing: false }), 3000);
         });
       });
     });
@@ -347,13 +345,12 @@
             conn.send(messageData);
             addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
             input.value = '';
+            conn.send({ typing: false });
           }
         });
 
         document.getElementById('input').addEventListener('input', function() {
           conn.send({ typing: true });
-          clearTimeout(typingTimeout);
-          typingTimeout = setTimeout(() => conn.send({ typing: false }), 3000);
         });
       });
     }
@@ -380,10 +377,10 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
-    function showTypingIndicator(typing) {
+    function showTypingIndicator(isTyping) {
       const typingIndicator = document.getElementById('typing-indicator');
-      if (typing) {
-        typingIndicator.textContent = 'A outra pessoa está digitando...';
+      if (isTyping) {
+        typingIndicator.textContent = 'A pessoa está digitando...';
       } else {
         typingIndicator.textContent = '';
       }
