@@ -10,14 +10,14 @@
       line-height: 1.6;
       margin: 0;
       padding: 0;
-      background: linear-gradient(to right, #4CAF50, #66BB6A);
+      background: #f2f2f2;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
 
     header {
-      background: linear-gradient(to right, #2E7D32, #388E3C);
+      background: #4CAF50;
       color: white;
       text-align: center;
       padding: 20px 0;
@@ -25,16 +25,15 @@
     }
 
     .container {
-      flex: 1;
       display: flex;
-      justify-content: space-around;
-      flex-wrap: wrap;
-      max-width: 800px;
+      justify-content: center;
       margin: 20px auto;
+      max-width: 800px;
+      padding: 0 10px;
     }
 
-    .container section {
-      flex: 1 1 100%;
+    section {
+      flex: 1;
       margin: 0 10px;
       background-color: #fff;
       padding: 20px;
@@ -43,19 +42,19 @@
       margin-bottom: 20px;
     }
 
-    .container h2 {
+    h2 {
       color: #333;
+      margin-bottom: 10px;
     }
 
     .input-group {
-      display: flex;
-      align-items: center;
       margin-top: 10px;
-      flex-wrap: wrap;
     }
 
-    .input-group input[type="text"], .input-group input[type="file"] {
-      flex: 1 1 100%;
+    .input-group input[type="text"], 
+    .input-group input[type="file"],
+    .input-group button {
+      width: 100%;
       padding: 10px;
       font-size: 14px;
       border: 1px solid #ccc;
@@ -64,48 +63,33 @@
       transition: all 0.3s ease;
     }
 
-    .input-group input[type="text"]:focus, .input-group input[type="file"]:focus {
+    .input-group input[type="text"]:focus, 
+    .input-group input[type="file"]:focus {
       border-color: #4CAF50;
       box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
     }
 
     .input-group button {
-      flex: 1 1 48%;
-      padding: 10px 20px;
-      font-size: 14px;
       background-color: #4CAF50;
       color: white;
       border: none;
       cursor: pointer;
       border-radius: 4px;
-      margin-right: 10px;
-      margin-bottom: 10px;
-      transition: background-color 0.3s ease;
+      margin-bottom: 0;
     }
 
     .input-group button:hover {
       background-color: #388E3C;
     }
 
-    #changeIdButton {
-      background-color: #ff9800;
-      margin-right: 0;
-    }
-
-    #changeIdButton:hover {
-      background-color: #e65100;
-    }
-
     main {
       max-width: 800px;
-      margin: 20px auto;
+      margin: 0 auto;
       background-color: #fff;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      display: flex;
-      flex-direction: column-reverse;
-      height: 60vh;
+      flex: 1;
       overflow-y: auto;
     }
 
@@ -113,7 +97,6 @@
       display: flex;
       align-items: flex-start;
       margin-bottom: 10px;
-      transition: all 0.3s ease;
     }
 
     .message .avatar {
@@ -150,6 +133,7 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       position: sticky;
       bottom: 0;
+      margin: 20px 0;
     }
 
     #input {
@@ -182,18 +166,20 @@
     }
 
     @media (max-width: 600px) {
-      .input-group input[type="text"], .input-group input[type="file"], .input-group button {
-        flex: 1 1 100%;
-        margin-right: 0;
+      .container {
+        flex-direction: column;
+        align-items: center;
       }
 
-      .container section {
-        margin-bottom: 10px;
+      section {
+        width: 100%;
+        margin: 0;
       }
 
       main {
-        height: 100vh;
-        width: 50vh;
+        height: 50vh;
+        width: calc(100vw - 40px);
+        margin: 20px 0;
       }
     }
   </style>
@@ -276,25 +262,25 @@
       conn = peer.connect(peerId);
 
       conn.on('open', function() {
-          conn.on('data', function(data) {
-            addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
-          });
+        conn.on('data', function(data) {
+          addMessage(data.message, data.avatar, 'received'); // Marcar mensagens como recebidas
+        });
 
-          document.getElementById('form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const input = document.getElementById('input');
-            if (input.value) {
-              const messageData = {
-                message: input.value,
-                avatar: avatarUrl
-              };
-              conn.send(messageData);
-              addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
-              input.value = '';
-            }
-          });
+        document.getElementById('form').addEventListener('submit', function(e) {
+          e.preventDefault();
+          const input = document.getElementById('input');
+          if (input.value) {
+            const messageData = {
+              message: input.value,
+              avatar: avatarUrl
+            };
+            conn.send(messageData);
+            addMessage(input.value, avatarUrl, 'sent'); // Marcar mensagens como enviadas
+            input.value = '';
+          }
         });
       });
+    });
 
     function initializePeer(id) {
       if (peer) {
