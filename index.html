@@ -97,7 +97,7 @@
     }
 
     main {
-      width: 800px;
+      max-width: 800px;
       margin: 20px auto;
       background-color: #fff;
       padding: 20px;
@@ -210,6 +210,7 @@
         <input id="your-id" type="text" value="meu-id-fixo">
         <button id="changeIdButton">Alterar ID</button>
         <button id="connect-my-peer">Usar ID Fixo</button>
+        <button id="disconnectButton" style="background-color: #f44336;">Desconectar</button>
       </div>
     </section>
 
@@ -234,49 +235,6 @@
     let peer;
     let conn;
 
-    const storedId = localStorage.getItem('peer-id');
-    if (storedId) {
-      document.getElementById('your-id').value = storedId;
-      initializePeer(storedId);
-    }
-
-    document.getElementById('connect-my-peer').addEventListener('click', function() {
-      const fixedId = document.getElementById('your-id').value;
-      localStorage.setItem('peer-id', fixedId);
-      initializePeer(fixedId);
-    });
-
-    document.getElementById('changeIdButton').addEventListener('click', function() {
-      const newId = document.getElementById('your-id').value;
-      localStorage.setItem('peer-id', newId);
-      alert(ID alterado para: ${newId});
-    });
-
-    document.getElementById('connect-button').addEventListener('click', function() {
-      const peerId = document.getElementById('peer-id-input').value;
-      conn = peer.connect(peerId);
-
-      conn.on('open', function() {
-        conn.on('data', function(data) {
-          addMessage(data.message, data.avatar, 'received');
-        });
-
-        document.getElementById('form').addEventListener('submit', function(e) {
-          e.preventDefault();
-          const input = document.getElementById('input');
-          if (input.value) {
-            const messageData = {
-              message: input.value,
-              avatar: ''
-            };
-            conn.send(messageData);
-            addMessage(input.value, '', 'sent');
-            input.value = '';
-          }
-        });
-      });
-    });
-
     function initializePeer(id) {
       if (peer) {
         peer.destroy();
@@ -287,25 +245,31 @@
         document.getElementById('your-id').value = id;
       });
 
-      peer.on('connection', function(connection) {
-        conn = connection;
-        conn.on('data', function(data) {
-          addMessage(data.message, data.avatar, 'received');
-        });
+      peer.on('connection', handleConnection);
+    }
 
-        document.getElementById('form').addEventListener('submit', function(e) {
-          e.preventDefault();
-          const input = document.getElementById('input');
-          if (input.value) {
-            const messageData = {
-              message: input.value,
-              avatar: ''
-            };
-            conn.send(messageData);
-            addMessage(input.value, '', 'sent');
-            input.value = '';
-          }
-        });
+    function handleConnection(connection) {
+      conn = connection;
+      conn.on('data', function(data) {
+        addMessage(data.message, data.avatar, 'received');
+      });
+      setupMessageSending();
+    }
+
+    function setupMessageSending() {
+      const form = document.getElementById('form');
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const input = document.getElementById('input');
+        if (input.value && conn) {
+          const messageData = {
+            message: input.value,
+            avatar: ''
+          };
+          conn.send(messageData);
+          addMessage(input.value, '', 'sent');
+          input.value = '';
+        }
       });
     }
 
@@ -333,10 +297,44 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
-    // Inicializar o peer com um ID fixo, se disponível
-    if (storedId) {
-      initializePeer(storedId);
+    function initializeStoredPeerId() {
+      const storedId = localStorage.getItem('peer-id');
+      if (storedId) {
+        document.getElementById('your-id').value = storedId;
+        initializePeer(storedId);
+      }
     }
+
+    document.getElementById('connect-my-peer').addEventListener('click', function() {
+      const fixedId = document.getElementById('your-id').value;
+      localStorage.setItem('peer-id', fixedId);
+      initializePeer(fixedId);
+    });
+
+    document.getElementById('changeIdButton').addEventListener('click', function() {
+      const newId = document.getElementById('your-id').value;
+      localStorage.setItem('peer-id', newId);
+      alert(`ID alterado para: ${newId}`);
+    });
+
+    document.getElementById('connect-button').addEventListener('click', function() {
+      const peerId = document.getElementById('peer-id-input').value;
+      conn = peer.connect(peerId);
+      conn.on('open', function() {
+        handleConnection(conn);
+      });
+    });
+
+    document.getElementById('disconnectButton').addEventListener('click', function() {
+      if (peer) {
+        peer.destroy();
+        alert('Desconectado');
+      }
+    });
+
+    // Inicializar o peer com um ID fixo, se disponível
+    initializeStoredPeerId();
+
   </script>
 </body>
 </html>
